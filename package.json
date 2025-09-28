@@ -8,17 +8,24 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "test": "vitest run",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "prisma:dev": "prisma migrate dev",
+    "prisma:gen": "prisma generate",
+    "prisma:studio": "prisma studio",
+    "prisma:status": "prisma migrate status"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
+  "prisma": {
+    "schema": "src/infrastructure/db/prisma/schema.prisma"
+  },
   "dependencies": {
     "@prisma/client": "^6.16.2",
     "dotenv": "^17.2.2",
+    "fastify": "^5.6.1",
     "pg": "^8.16.3",
-    "pino": "^9.11.0",
     "prisma": "^6.16.2",
     "telegraf": "^4.16.3",
     "zod": "^4.1.11"

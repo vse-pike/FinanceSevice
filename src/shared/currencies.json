@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Доллар США",
+    "value": { "code": "USD", "type": "FIAT" }
+  },
+  {
+    "name": "Российский рубль",
+    "value": { "code": "RUB", "type": "FIAT" }
+  },
+  {
+    "name": "Тенге Казахстана",
+    "value": { "code": "KZT", "type": "FIAT" }
+  },
+  {
+    "name": "Биткоин",
+    "value": { "code": "BTC", "type": "CRYPTO" }
+  },
+  {
+    "name": "Toncoin",
+    "value": { "code": "TON", "type": "CRYPTO" }
+  }
+]

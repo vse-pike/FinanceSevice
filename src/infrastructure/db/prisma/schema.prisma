@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ——— справочники ———
+enum AssetType {
+  FIAT
+  CRYPTO
+  STOCK
+  RE
+  DEBT
+}
+
+enum ValuationMode {
+  MARKET
+  MANUAL
+}
+
+enum CommitKind {
+  QTY_TOTAL
+  DEBT_TOTAL
+  MANUAL_VALUATION
+}
+
+// ——— пользователи ———
+model User {
+  id         String   @id @default(uuid())
+  telegramId BigInt   @unique
+  username   String
+  createdAt  DateTime @default(now())
+  assets     Asset[]
+}
+
+// ——— актив ———
+// qty есть всегда; оценка либо MARKET (цена с провайдера), либо MANUAL (хранимая).
+// долг влияет только на net (equity), не на gross.
+model Asset {
+  id       String    @id @default(uuid())
+  userId   String
+  name     String
+  type     AssetType
+  currency String
+  qty      Decimal   @default(0) @db.Decimal(38, 12)
+
+  valuationMode ValuationMode @default(MARKET)
+  quoteSymbol   String?
+
+  // MANUAL-оценка
+  manualTotalValue Decimal? @db.Decimal(38, 2)
+
+  // долг по активу (ипотека/кредит): влияет на net, не на gross
+  debtOutstanding Decimal? @db.Decimal(38, 2)
+  debtCurrency    String?
+
+  createdAt DateTime @default(now())
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commits   AssetCommit[]
+  snapshots DailySnapshot[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+// ——— коммиты изменений состояния ———
+model AssetCommit {
+  id        String     @id @default(uuid())
+  assetId   String
+  kind      CommitKind
+  timestamp DateTime   @default(now())
+  note      String?
+
+  qtyTotal         Decimal? @db.Decimal(38, 12)
+  debtTotal        Decimal? @db.Decimal(38, 2)
+  debtCurrency     String?
+  manualTotalValue Decimal? @db.Decimal(38, 2)
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, timestamp])
+}
+
+// ——— ежедневные снапшоты ———
+model DailySnapshot {
+  userAssetId String
+  date        DateTime
+  qty         Decimal  @db.Decimal(38, 12)
+
+  valuesJson Json
+  metaJson   Json?
+
+  asset Asset @relation(fields: [userAssetId], references: [id], onDelete: Cascade)
+
+  @@id([userAssetId, date])
+  @@index([date])
+}
