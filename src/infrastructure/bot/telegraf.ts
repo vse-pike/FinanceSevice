@@ -49,11 +49,7 @@ export function buildBot(token: string) {
     const pending = states.get(tgId);
     if (!pending) return;
 
-    if (pending.onUpdate) {
-      await pending.onUpdate(ctx);
-    } else {
-      await pending.execute(ctx);
-    }
+    await pending.execute(ctx);
 
     if (pending.isFinished) states.clear(tgId);
   }
@@ -64,7 +60,7 @@ export function buildBot(token: string) {
     } catch {
       //ignore
     } finally {
-      states.clear(BigInt(ctx.from!.id));
+      if (err instanceof BusinessException) states.clear(BigInt(ctx.from!.id));
     }
   });
 

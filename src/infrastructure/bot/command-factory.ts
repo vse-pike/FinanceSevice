@@ -1,6 +1,6 @@
-import { StartCommand } from '@/features/users/add/start.сommand.js';
+import { StartCommand } from '@/features/users/start/сommand.js';
 import type { Command } from './command.js';
-import { AddAssetCommand } from '@/features/asset/add/add-asset.command.js';
+import { AddAssetCommand } from '@/features/asset/add/command.js';
 
 export class CommandFactory {
   private registry = new Map<string, () => Command>();

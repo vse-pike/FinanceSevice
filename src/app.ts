@@ -1,15 +1,11 @@
 import Fastify from 'fastify';
 import { buildBot } from '@/infrastructure/bot/telegraf.js';
-import { registerHealthRoutes } from '@/features/health/http.js';
 import { env } from './shared/env.js';
 
 async function main() {
   const app = Fastify({ logger: true });
   const token = env.BOT_TOKEN;
   const bot = buildBot(token);
-
-  // HTTP: health/ready
-  await registerHealthRoutes(app);
 
   // Стартуем HTTP (для health/ready; вебхука нет)
   const port = Number(process.env.PORT ?? 3000);
