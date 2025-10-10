@@ -20,3 +20,22 @@ export function extractUser(ctx: Ctx): TelegramUser {
     username,
   };
 }
+
+export function readText(ctx: Ctx): string | null {
+  const msg = ctx.message;
+  if (!msg) return null;
+  if ('text' in msg && typeof msg.text === 'string') {
+    const text = msg.text.trim();
+    return text.length > 0 ? text : null;
+  }
+  return null;
+}
+
+export function readCallbackData(ctx: Ctx): string | null {
+  const cb = ctx.callbackQuery;
+  if (!cb) return null;
+  if ('data' in cb && typeof cb.data === 'string') {
+    return cb.data.trim();
+  }
+  return null;
+}

@@ -5,10 +5,11 @@ import { CommandFactory } from './command-factory.js';
 import type { Ctx } from './command.js';
 import { getErrorMessage } from './error.js';
 import { UserStateContainer } from './user-state.js';
+import { CurrencyCatalog } from '@/shared/currency-catalog.js';
 
 const COMMAND_PREFIX = '/';
 
-export function buildBot(token: string) {
+export function buildBot(token: string, deps: { currencies: CurrencyCatalog }) {
   const bot = new Telegraf(token);
   const states = new UserStateContainer();
   const factory = new CommandFactory();
@@ -18,6 +19,7 @@ export function buildBot(token: string) {
       const user = extractUser(ctx);
       ctx.state.user = user;
     }
+    ctx.state.currencies = deps.currencies;
     await next();
   });
 

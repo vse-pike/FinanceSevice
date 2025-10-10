@@ -14,17 +14,12 @@ enum AssetType {
   STOCK
   RE
   DEBT
+  COMMODITY
 }
 
 enum ValuationMode {
   MARKET
   MANUAL
-}
-
-enum CommitKind {
-  QTY_TOTAL
-  DEBT_TOTAL
-  MANUAL_VALUATION
 }
 
 // ——— пользователи ———
@@ -45,17 +40,13 @@ model Asset {
   name     String
   type     AssetType
   currency String
-  qty      Decimal   @default(0) @db.Decimal(38, 12)
+  qty      Decimal   @db.Decimal(38, 12)
 
   valuationMode ValuationMode @default(MARKET)
-  quoteSymbol   String?
-
   // MANUAL-оценка
-  manualTotalValue Decimal? @db.Decimal(38, 2)
-
+  total         Decimal?      @db.Decimal(38, 2)
   // долг по активу (ипотека/кредит): влияет на net, не на gross
-  debtOutstanding Decimal? @db.Decimal(38, 2)
-  debtCurrency    String?
+  debt          Decimal?      @db.Decimal(38, 2)
 
   createdAt DateTime @default(now())
 
@@ -69,16 +60,13 @@ model Asset {
 
 // ——— коммиты изменений состояния ———
 model AssetCommit {
-  id        String     @id @default(uuid())
+  id        String   @id @default(uuid())
   assetId   String
-  kind      CommitKind
-  timestamp DateTime   @default(now())
-  note      String?
+  timestamp DateTime @default(now())
 
-  qtyTotal         Decimal? @db.Decimal(38, 12)
-  debtTotal        Decimal? @db.Decimal(38, 2)
-  debtCurrency     String?
-  manualTotalValue Decimal? @db.Decimal(38, 2)
+  qty   Decimal  @db.Decimal(38, 12)
+  total Decimal? @db.Decimal(38, 2)
+  debt  Decimal? @db.Decimal(38, 2)
 
   asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
 

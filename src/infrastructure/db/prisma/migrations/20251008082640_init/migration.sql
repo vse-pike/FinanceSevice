@@ -1,11 +1,8 @@
 -- CreateEnum
-CREATE TYPE "public"."AssetType" AS ENUM ('FIAT', 'CRYPTO', 'STOCK', 'RE', 'DEBT');
+CREATE TYPE "public"."AssetType" AS ENUM ('FIAT', 'CRYPTO', 'STOCK', 'RE', 'DEBT', 'COMMODITY');
 
 -- CreateEnum
 CREATE TYPE "public"."ValuationMode" AS ENUM ('MARKET', 'MANUAL');
-
--- CreateEnum
-CREATE TYPE "public"."CommitKind" AS ENUM ('QTY_TOTAL', 'DEBT_TOTAL', 'MANUAL_VALUATION');
 
 -- CreateTable
 CREATE TABLE "public"."User" (
@@ -24,12 +21,10 @@ CREATE TABLE "public"."Asset" (
     "name" TEXT NOT NULL,
     "type" "public"."AssetType" NOT NULL,
     "currency" TEXT NOT NULL,
-    "qty" DECIMAL(38,12) NOT NULL DEFAULT 0,
+    "qty" DECIMAL(38,12) NOT NULL,
     "valuationMode" "public"."ValuationMode" NOT NULL DEFAULT 'MARKET',
-    "quoteSymbol" TEXT,
-    "manualTotalValue" DECIMAL(38,2),
-    "debtOutstanding" DECIMAL(38,2),
-    "debtCurrency" TEXT,
+    "total" DECIMAL(38,2),
+    "debt" DECIMAL(38,2),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Asset_pkey" PRIMARY KEY ("id")
@@ -39,13 +34,10 @@ CREATE TABLE "public"."Asset" (
 CREATE TABLE "public"."AssetCommit" (
     "id" TEXT NOT NULL,
     "assetId" TEXT NOT NULL,
-    "kind" "public"."CommitKind" NOT NULL,
     "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "note" TEXT,
-    "qtyTotal" DECIMAL(38,12),
-    "debtTotal" DECIMAL(38,2),
-    "debtCurrency" TEXT,
-    "manualTotalValue" DECIMAL(38,2),
+    "qty" DECIMAL(38,12),
+    "total" DECIMAL(38,2),
+    "debt" DECIMAL(38,2),
 
     CONSTRAINT "AssetCommit_pkey" PRIMARY KEY ("id")
 );
