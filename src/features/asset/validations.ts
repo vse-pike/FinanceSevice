@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { AssetType } from '@prisma/client';
 import { CurrencyCatalog } from '@/shared/currency-catalog.js';
-import { ConfirmAction } from './render-configs/keyboard.js';
+import { ConfirmAction } from './add/context.js';
 
 export const NameSchema = z.string().trim().min(1, 'Название не может быть пустым');
 

@@ -1,26 +1,34 @@
-import { CurrencyCatalog } from '@/shared/currency-catalog.js';
 import { AssetType, ValuationMode } from '@prisma/client';
-import { ConfirmAction } from './render-configs/keyboard.js';
+import { CurrencyCatalog } from '@/shared/currency-catalog.js';
+import { Message } from 'telegraf/types';
 
-export type AddAssetModel = {
+export enum ConfirmAction {
+  APPROVE = 'APPROVE',
+  DECLINE = 'DECLINE',
+}
+
+export type AddCommandContext = {
   name?: string;
   type?: AssetType;
   currency?: string;
   valuationMode?: ValuationMode;
-  qty?: number;
+  qty?: number | null;
   total?: number | null;
   debt?: number | null;
-  confirm?: ConfirmAction | null;
+  confirm?: ConfirmAction;
 };
 
-export interface Services {
-  saveAsset(model: Required<AddAssetModel>): Promise<void>;
+export interface AddAssetServices {
+  saveAsset(payload: Required<AddCommandContext>): Promise<void>;
 }
 
 export interface AddAssetCtx {
-  model: AddAssetModel;
-  services: Services;
+  context: AddCommandContext;
+  services: AddAssetServices;
   deps: {
     currencies: CurrencyCatalog;
+  };
+  ui?: {
+    show?: (text: string) => Promise<Message.TextMessage>;
   };
 }

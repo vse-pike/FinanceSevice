@@ -1,11 +1,11 @@
-import { extractUser } from '@/infrastructure/bot/command-helper.js';
 import { BusinessException } from '@/shared/business-exception.js';
 import { Telegraf } from 'telegraf';
-import { CommandFactory } from './command-factory.js';
-import type { Ctx } from './command.js';
 import { getErrorMessage } from './error.js';
 import { UserStateContainer } from './user-state.js';
 import { CurrencyCatalog } from '@/shared/currency-catalog.js';
+import { CommandFactory } from './command/command-factory.js';
+import { extractUser } from './command/command-helper.js';
+import { Ctx } from './command/command.js';
 
 const COMMAND_PREFIX = '/';
 
