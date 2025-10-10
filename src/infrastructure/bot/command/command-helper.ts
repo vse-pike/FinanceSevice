@@ -1,4 +1,4 @@
-import { BusinessException } from '../../shared/business-exception.js';
+import { BusinessException } from '../../../shared/business-exception.js';
 import { Ctx } from './command.js';
 
 export type TelegramUser = {
