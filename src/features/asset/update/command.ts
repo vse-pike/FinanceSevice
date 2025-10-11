@@ -1,28 +1,29 @@
-import type { Command, Ctx } from '@/infrastructure/bot/command/command.js';
-import { BusinessException } from '@/shared/business-exception.js';
-import { db } from '@/infrastructure/db/db.js';
-import { saveAssetTx } from './add.db-service.js';
-import { AddAssetCtx, AddCommandCtx, Asset } from './context.js';
-import { AskNamePage } from './command-pages.js';
 import {
   readCallbackData,
   readText,
   TelegramUser,
 } from '@/infrastructure/bot/command/command-helper.js';
-import type { InlineKeyboardMarkup } from 'telegraf/types';
-import { Page } from '@/infrastructure/bot/render/render-engine.js';
+import { Command, Ctx } from '@/infrastructure/bot/command/command.js';
+import { db } from '@/infrastructure/db/db.js';
+import { BusinessException } from '@/shared/business-exception.js';
+import { Asset, UpdateCommandCtx, UpdateAssetCtx } from './context.js';
+import { InlineKeyboardMarkup } from 'telegraf/types';
+import { AssetDbModel } from './asset-db.model.js';
 import { TelegramRender } from '@/infrastructure/bot/render/telegram-render.js';
+import { Page } from '@/infrastructure/bot/render/render-engine.js';
+import { AskAssetListPage } from './command-pages.js';
+import { deleteAssetTx, updateAssetTx } from './update.db-service.js';
 
-export class AddAssetCommand implements Command {
-  static name = '/add_asset';
+export class UpdateAssetCommand implements Command {
+  static name = '/update_asset';
   isFinished = false;
 
   private editMsgId?: number;
   private initialized = false;
   private userMsgIds: number[] = [];
 
-  private ctx!: AddCommandCtx;
-  private page!: Page<AddCommandCtx>;
+  private ctx!: UpdateCommandCtx;
+  private page!: Page<UpdateCommandCtx>;
 
   async execute(ctx: Ctx): Promise<void> {
     if (!this.initialized) {
@@ -33,26 +34,35 @@ export class AddAssetCommand implements Command {
   }
 
   private async init(ctx: Ctx) {
-    const tgUser: TelegramUser = ctx.state.user;
-    const user = await db.user.findUnique({ where: { telegramId: tgUser.telegramId } });
-    if (!user) throw new BusinessException('Пользователь не найден. Невозможно добавить актив.');
+    const telegramUser: TelegramUser = ctx.state.user;
+    const user = await db.user.findUnique({ where: { telegramId: telegramUser.telegramId } });
+    if (!user) throw new BusinessException('Пользователь не найден. Невозможно обновить актив.');
 
     const services = {
-      saveAsset: async (m: Required<Asset>) => {
-        await saveAssetTx(String(user.id), m);
+      updateAsset: async (m: Required<Asset>) => {
+        await updateAssetTx(String(user.id), m);
+      },
+      deleteAsset: async (assetId: string) => {
+        await deleteAssetTx(assetId);
       },
     };
 
     this.ctx = {
       context: {
         model: {} as Asset,
-      } as AddAssetCtx,
+      } as UpdateAssetCtx,
       services,
       deps: { currencies: ctx.state.currencies },
       ui: { show: async (text) => await ctx.reply(text) },
     };
 
-    this.page = new AskNamePage();
+    const assets: AssetDbModel[] = await db.asset.findMany({
+      where: { userId: user.id },
+    });
+
+    this.ctx.context.assets = assets;
+
+    this.page = new AskAssetListPage();
 
     const rawView = this.page.render(this.ctx);
     const renderedView = TelegramRender.render(rawView);
@@ -84,6 +94,7 @@ export class AddAssetCommand implements Command {
     }
 
     this.page = next.page;
+
     const rawView = this.page.render(this.ctx);
     const renderedView = TelegramRender.render(rawView);
     await this.safeEdit(ctx, renderedView.text, renderedView.keyboard);

@@ -2,6 +2,13 @@ import { z } from 'zod';
 import { AssetType } from '@prisma/client';
 import { CurrencyCatalog } from '@/shared/currency-catalog.js';
 import { ConfirmAction } from './add/context.js';
+import { UpdateMenuAction } from './update/context.js';
+
+export function prettyZodError(e: z.ZodError): string {
+  const i = e.issues[0];
+  if (!i) return 'Некорректное значение';
+  return i.message;
+}
 
 export const NameSchema = z.string().trim().min(1, 'Название не может быть пустым');
 
@@ -12,16 +19,33 @@ export const CurrencyCodeSchema = (cat: CurrencyCatalog) =>
     .toUpperCase()
     .refine((c) => cat.has(c), { message: 'Неизвестная валюта' });
 
-export const DecimalPositiveSchema = z.coerce
-  .number()
-  .transform((v) => (typeof v === 'number' ? Number(String(v).replace(/\s|,/g, '.')) : v))
-  .refine((v) => Number.isFinite(v) && v > 0, { message: 'Значение должно быть > 0' });
+export const DecimalPositiveSchema = z
+  .string()
+  .trim()
+  .transform((s) => s.replace(/\s/g, '').replace(',', '.')) // "7 000,5" -> "7000.5"
+  .refine((s) => /^[-+]?\d+(\.\d+)?$/.test(s), {
+    message: 'Введите корректное число',
+  })
+  .transform((s) => Number(s))
+  .refine((n) => n > 0, { message: 'Значение должно быть > 0' });
 
-export const DecimalNotZeroSchema = z.coerce
-  .number()
-  .transform((v) => (typeof v === 'number' ? Number(String(v).replace(/\s|,/g, '.')) : v))
-  .refine((v) => Number.isFinite(v) && v >= 0, { message: 'Значение должно быть >= 0' });
+export const DecimalNonNegSchema = z
+  .string()
+  .trim()
+  .transform((s) => s.replace(/\s/g, '').replace(',', '.'))
+  .refine((s) => /^[-+]?\d+(\.\d+)?$/.test(s), {
+    message: 'Введите корректное число',
+  })
+  .transform((s) => Number(s))
+  .refine((n) => n >= 0, { message: 'Значение должно быть ≥ 0' });
 
 export const AssetTypeSchema = z.enum(AssetType); //Добавить сообщение об ошибке
 
 export const ConfirmActionSchema = z.enum(ConfirmAction); //Добавить сообщение об ошибке
+
+export const UpdateMenuActionSchema = z.enum(UpdateMenuAction);
+
+export const AssetIdSchema = z
+  .string()
+  .regex(/^asset:(.+)$/, 'Неизвестный актив')
+  .transform((v) => v.replace(/^asset:/, ''));

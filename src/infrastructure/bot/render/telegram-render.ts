@@ -21,7 +21,7 @@ export class TelegramRender {
           break;
 
         case 'Error':
-          lines.push(`❗ ${n.text}`);
+          lines.push('', `❗ ${n.text}`);
           break;
 
         case 'Prompt':

@@ -7,7 +7,7 @@ export enum ConfirmAction {
   DECLINE = 'DECLINE',
 }
 
-export type AddCommandContext = {
+export type Asset = {
   name?: string;
   type?: AssetType;
   currency?: string;
@@ -15,15 +15,18 @@ export type AddCommandContext = {
   qty?: number | null;
   total?: number | null;
   debt?: number | null;
+};
+export type AddAssetCtx = {
+  model?: Asset;
   confirm?: ConfirmAction;
 };
 
 export interface AddAssetServices {
-  saveAsset(payload: Required<AddCommandContext>): Promise<void>;
+  saveAsset(payload: Required<Asset>): Promise<void>;
 }
 
-export interface AddAssetCtx {
-  context: AddCommandContext;
+export interface AddCommandCtx {
+  context: AddAssetCtx;
   services: AddAssetServices;
   deps: {
     currencies: CurrencyCatalog;
