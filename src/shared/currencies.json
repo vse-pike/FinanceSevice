@@ -1,22 +1,22 @@
 [
   {
-    "name": "Доллар США",
-    "value": { "code": "USD", "type": "FIAT" }
+    "code": "USD",
+    "value": { "name": "Доллар США", "type": "FIAT" }
   },
   {
-    "name": "Российский рубль",
-    "value": { "code": "RUB", "type": "FIAT" }
+    "code": "RUB",
+    "value": { "name": "Российский рубль", "type": "FIAT" }
   },
   {
-    "name": "Тенге Казахстана",
-    "value": { "code": "KZT", "type": "FIAT" }
+    "code": "KZT",
+    "value": { "name": "Тенге Казахстана", "type": "FIAT" }
   },
   {
-    "name": "Биткоин",
-    "value": { "code": "BTC", "type": "CRYPTO" }
+    "code": "BTC",
+    "value": { "name": "Биткоин", "type": "CRYPTO" }
   },
   {
-    "name": "Toncoin",
-    "value": { "code": "TON", "type": "CRYPTO" }
+    "code": "TON",
+    "value": { "name": "Toncoin", "type": "CRYPTO" }
   }
 ]

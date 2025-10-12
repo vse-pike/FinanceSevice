@@ -1,9 +1,8 @@
 import Fastify from 'fastify';
 import { buildBot } from '@/infrastructure/bot/telegraf.js';
 import { env } from './shared/env.js';
-import chokidar from 'chokidar';
-import { CurrencyCatalog, CurrencyJsonSchema } from './shared/currency-catalog.js';
-import { readFile } from 'node:fs/promises';
+import { CurrencyCatalog } from './shared/currency-catalog.js';
+import { buildRateResolver } from './infrastructure/rate/index.js';
 
 async function main() {
   const app = Fastify({ logger: true });
@@ -13,12 +12,7 @@ async function main() {
   const currencies = await CurrencyCatalog.fromFile('./src/shared/currencies.json');
   app.log.info(`Loaded ${currencies.codes().length} currencies`);
 
-  chokidar.watch('./src/shared/currencies.json').on('change', async () => {
-    const raw = await readFile('./src/shared/currencies.json', 'utf-8');
-    const parsed = CurrencyJsonSchema.parse(JSON.parse(raw));
-    currencies.replace(parsed);
-    app.log.info('Currencies reloaded');
-  });
+  const rateResolver = buildRateResolver(currencies);
 
   // Стартуем HTTP (для health/ready; вебхука нет)
   const port = Number(process.env.PORT ?? 3000);
@@ -27,7 +21,7 @@ async function main() {
   app.log.info({ port }, 'HTTP server started');
 
   // Телеграм: long-polling
-  const bot = buildBot(token, { currencies: currencies });
+  const bot = buildBot(token, { currencies, rateResolver });
   await bot.launch();
   app.log.info('Telegram bot launched (long-polling)');
 

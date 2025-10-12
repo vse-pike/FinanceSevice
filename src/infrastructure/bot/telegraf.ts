@@ -6,10 +6,14 @@ import { CurrencyCatalog } from '@/shared/currency-catalog.js';
 import { CommandFactory } from './command/command-factory.js';
 import { extractUser } from './command/command-helper.js';
 import { Ctx } from './command/command.js';
+import { RateResolver } from '../rate/resolver.js';
 
 const COMMAND_PREFIX = '/';
 
-export function buildBot(token: string, deps: { currencies: CurrencyCatalog }) {
+export function buildBot(
+  token: string,
+  deps: { currencies: CurrencyCatalog; rateResolver: RateResolver },
+) {
   const bot = new Telegraf(token);
   const states = new UserStateContainer();
   const factory = new CommandFactory();
