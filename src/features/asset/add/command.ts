@@ -1,25 +1,17 @@
-import type { Command, Ctx } from '@/infrastructure/bot/command/command.js';
+import { Command } from '@/infrastructure/bot/command/command.js';
 import { BusinessException } from '@/shared/business-exception.js';
 import { db } from '@/infrastructure/db/db.js';
-import { saveAssetTx } from './add.db-service.js';
-import { AddAssetCtx, AddCommandCtx, Asset } from './context.js';
+import { AddAssetCtx, AddCommandCtx } from './context.js';
 import { AskNamePage } from './command-pages.js';
-import {
-  readCallbackData,
-  readText,
-  TelegramUser,
-} from '@/infrastructure/bot/command/command-helper.js';
-import type { InlineKeyboardMarkup } from 'telegraf/types';
+import { readCallbackData, readText } from '@/infrastructure/bot/command/command-helper.js';
 import { Page } from '@/infrastructure/bot/render/render-engine.js';
 import { TelegramRender } from '@/infrastructure/bot/render/telegram-render.js';
+import { Ctx } from '@/types/ctx.js';
+import { Asset } from '@/infrastructure/db/asset-db.service.js';
 
-export class AddAssetCommand implements Command {
+export class AddAssetCommand extends Command {
   static name = '/add_asset';
   isFinished = false;
-
-  private editMsgId?: number;
-  private initialized = false;
-  private userMsgIds: number[] = [];
 
   private ctx!: AddCommandCtx;
   private page!: Page<AddCommandCtx>;
@@ -33,22 +25,16 @@ export class AddAssetCommand implements Command {
   }
 
   private async init(ctx: Ctx) {
-    const tgUser: TelegramUser = ctx.state.user;
-    const user = await db.user.findUnique({ where: { telegramId: tgUser.telegramId } });
-    if (!user) throw new BusinessException('Пользователь не найден. Невозможно добавить актив.');
-
-    const services = {
-      saveAsset: async (m: Required<Asset>) => {
-        await saveAssetTx(String(user.id), m);
-      },
-    };
+    const extractedUser = await db.user.findUnique({ where: { telegramId: ctx.user.telegramId } });
+    if (!extractedUser)
+      throw new BusinessException('Пользователь не найден. Невозможно показать портфель.');
 
     this.ctx = {
       context: {
+        userId: extractedUser.id,
         model: {} as Asset,
       } as AddAssetCtx,
-      services,
-      deps: { currencies: ctx.state.currencies },
+      di: ctx.di,
       ui: { show: async (text) => await ctx.reply(text) },
     };
 
@@ -56,7 +42,7 @@ export class AddAssetCommand implements Command {
 
     const rawView = this.page.render(this.ctx);
     const renderedView = TelegramRender.render(rawView);
-    await this.safeEdit(ctx, renderedView.text, renderedView.keyboard);
+    await this.safeEdit(ctx, renderedView.text, renderedView.keyboard, renderedView.parseMode);
     this.initialized = true;
   }
 
@@ -71,7 +57,7 @@ export class AddAssetCommand implements Command {
     if (!result.success) {
       const rawView = this.page.render(this.ctx, result.message);
       const renderedView = TelegramRender.render(rawView);
-      await this.safeEdit(ctx, renderedView.text, renderedView.keyboard);
+      await this.safeEdit(ctx, renderedView.text, renderedView.keyboard, renderedView.parseMode);
       return;
     }
 
@@ -86,32 +72,6 @@ export class AddAssetCommand implements Command {
     this.page = next.page;
     const rawView = this.page.render(this.ctx);
     const renderedView = TelegramRender.render(rawView);
-    await this.safeEdit(ctx, renderedView.text, renderedView.keyboard);
-  }
-
-  private trackUserMessage(ctx: Ctx) {
-    const mid = ctx.message && 'message_id' in ctx.message ? ctx.message.message_id : undefined;
-    if (mid) this.userMsgIds.push(mid);
-  }
-
-  private async flushUserMessages(ctx: Ctx) {
-    const chatId = ctx.chat!.id;
-
-    this.userMsgIds.push(this.editMsgId!);
-    ctx.telegram.deleteMessages(chatId, this.userMsgIds);
-
-    this.userMsgIds = [];
-  }
-
-  private async safeEdit(ctx: Ctx, text: string, keyboard?: InlineKeyboardMarkup) {
-    const extra = keyboard ? { reply_markup: keyboard } : undefined;
-
-    if (this.editMsgId) {
-      await ctx.telegram.editMessageText(ctx.chat!.id, this.editMsgId, undefined, text, extra);
-      return;
-    }
-
-    const msg = await ctx.reply(text, extra);
-    this.editMsgId = msg.message_id;
+    await this.safeEdit(ctx, renderedView.text, renderedView.keyboard, renderedView.parseMode);
   }
 }

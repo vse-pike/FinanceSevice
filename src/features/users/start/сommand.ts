@@ -1,15 +1,15 @@
-import { Command, Ctx } from '@/infrastructure/bot/command.js';
 import { db } from '@/infrastructure/db/db.js';
 import { BusinessException } from '../../../shared/business-exception.js';
-import { TelegramUser } from '@/infrastructure/bot/command-helper.js';
+import { ICommand } from '@/infrastructure/bot/command/command.js';
+import { Ctx } from '@/types/ctx.js';
 
-export class StartCommand implements Command {
+export class StartCommand implements ICommand {
   static name = '/start';
   isFinished = false;
 
   async execute(ctx: Ctx): Promise<void> {
     try {
-      const user: TelegramUser = ctx.state.user;
+      const user = ctx.user;
 
       await db.user.upsert({
         where: { telegramId: user.telegramId },

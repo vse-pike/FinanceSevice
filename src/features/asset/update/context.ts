@@ -1,40 +1,22 @@
-import { Prisma, ValuationMode } from '@prisma/client';
-import { CurrencyCatalog } from '@/shared/currency-catalog.js';
-import { AssetDbModel } from './asset-db.model.js';
 import { Message } from 'telegraf/types';
+import { AppCradle } from '@/di.js';
+import { Asset } from '@/infrastructure/db/asset-db.service.js';
 
 export enum UpdateMenuAction {
   UPDATE = 'UPDATE',
   DELETE = 'DELETE',
 }
 
-export type Asset = {
-  id?: string;
-  name?: string;
-  valuationMode?: ValuationMode;
-  qty?: Prisma.Decimal;
-  currency?: string;
-  total?: Prisma.Decimal | null;
-  debt?: Prisma.Decimal | null;
-};
-
 export type UpdateAssetCtx = {
-  assets?: AssetDbModel[];
+  userId: string;
+  assets?: Asset[];
   model?: Asset;
   action?: UpdateMenuAction | null;
 };
 
-export interface Services {
-  updateAsset(model: Required<Asset>): Promise<void>;
-  deleteAsset(assetId: string): Promise<void>;
-}
-
 export interface UpdateCommandCtx {
   context: UpdateAssetCtx;
-  services: Services;
-  deps: {
-    currencies: CurrencyCatalog;
-  };
+  di: AppCradle;
   ui?: {
     show?: (text: string) => Promise<Message.TextMessage>;
   };

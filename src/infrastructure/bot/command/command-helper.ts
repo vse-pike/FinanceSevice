@@ -1,5 +1,5 @@
+import { Ctx } from '@/types/ctx.js';
 import { BusinessException } from '../../../shared/business-exception.js';
-import { Ctx } from './command.js';
 
 export type TelegramUser = {
   telegramId: bigint;

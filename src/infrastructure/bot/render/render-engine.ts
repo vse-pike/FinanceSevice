@@ -23,8 +23,19 @@ export type UiNode =
       type: 'FormRow';
       label: string;
       value?: string | number | null | Prisma.Decimal;
-      state: 'not' | 'fill' | 'ok';
+      state?: 'not' | 'fill' | 'ok';
+    }
+  | {
+      type: 'Row';
+      label: string;
+      value: string | number | null | undefined | Prisma.Decimal;
+      boldLabel?: boolean;
+      bullet?: boolean;
     }
   | { type: 'Keyboard'; rows: Array<Array<{ text: string; cb: any }>> };
 
-export type View = { text: string; keyboard?: InlineKeyboardMarkup };
+export type View = {
+  text: string;
+  keyboard?: InlineKeyboardMarkup;
+  parseMode?: 'HTML' | 'MarkdownV2';
+};

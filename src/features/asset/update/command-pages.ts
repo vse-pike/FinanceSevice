@@ -3,11 +3,11 @@ import {
   AssetIdSchema,
   DecimalNonNegSchema,
   DecimalPositiveSchema,
-  prettyZodError,
   UpdateMenuActionSchema,
 } from '../validations.js';
 import { UpdateCommandCtx, UpdateMenuAction } from './context.js';
 import { Prisma, ValuationMode } from '@prisma/client';
+import { prettyZodError } from '@/features/validation.js';
 
 export class AskAssetListPage implements Page<UpdateCommandCtx> {
   render(ctx: UpdateCommandCtx, error?: string): ViewModel {
@@ -38,6 +38,7 @@ export class AskAssetListPage implements Page<UpdateCommandCtx> {
     ctx.context.model = current
       ? {
           id: current.id,
+          type: current.type,
           name: current.name,
           valuationMode: current.valuationMode,
           currency: current.currency,
@@ -109,7 +110,7 @@ export class AssetOptionPage implements Page<UpdateCommandCtx> {
     }
 
     if (ctx.context.action === UpdateMenuAction.DELETE) {
-      await ctx.services.deleteAsset(ctx.context.model!.id!);
+      await ctx.di.assetDbService.deleteAssetTx(ctx.context.model!.id);
       ctx.ui?.show?.(`🗑️ Актив «${ctx.context.model?.name}» удалён`);
     }
 
@@ -143,14 +144,15 @@ export class UpdateQtyPage implements Page<UpdateCommandCtx> {
 
   async next(ctx: UpdateCommandCtx): Promise<NextResult<UpdateCommandCtx>> {
     const m = ctx.context.model!;
-    await ctx.services.updateAsset({
-      id: m.id!,
-      name: m.name!,
-      currency: m.currency!,
-      valuationMode: m.valuationMode!,
-      qty: m.qty!,
-      total: m.total!,
-      debt: m.debt!,
+    await ctx.di.assetDbService.updateAssetTx(ctx.context.userId, {
+      id: m.id,
+      type: m.type,
+      name: m.name,
+      currency: m.currency,
+      valuationMode: m.valuationMode,
+      qty: m.qty,
+      total: m.total,
+      debt: m.debt,
     });
     ctx.ui?.show?.(`✅ «${m.name}»: количество обновлено на ${m.qty} ${m.currency}`);
     return { done: true };
@@ -223,14 +225,15 @@ export class UpdateDebtPage implements Page<UpdateCommandCtx> {
 
   async next(ctx: UpdateCommandCtx): Promise<NextResult<UpdateCommandCtx>> {
     const m = ctx.context.model!;
-    await ctx.services.updateAsset({
-      id: m.id!,
-      name: m.name!,
-      currency: m.currency!,
-      valuationMode: m.valuationMode!,
-      qty: m.qty!,
-      total: m.total!,
-      debt: m.debt!,
+    await ctx.di.assetDbService.updateAssetTx(ctx.context.userId, {
+      id: m.id,
+      type: m.type,
+      name: m.name,
+      currency: m.currency,
+      valuationMode: m.valuationMode,
+      qty: m.qty,
+      total: m.total,
+      debt: m.debt,
     });
     ctx.ui?.show?.(`✅ «${m.name}»: долг/оценка обновлены → ${m.debt}/${m.total} ${m.currency}`);
     return { done: true };

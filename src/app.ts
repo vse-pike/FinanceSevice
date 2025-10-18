@@ -1,18 +1,14 @@
 import Fastify from 'fastify';
 import { buildBot } from '@/infrastructure/bot/telegraf.js';
-import { env } from './shared/env.js';
-import { CurrencyCatalog } from './shared/currency-catalog.js';
-import { buildRateResolver } from './infrastructure/rate/index.js';
+import { env } from './env.js';
+import { makeContainer } from './di.js';
 
 async function main() {
   const app = Fastify({ logger: true });
   const token = env.BOT_TOKEN;
 
-  // Подгружаем зависимости
-  const currencies = await CurrencyCatalog.fromFile('./src/shared/currencies.json');
-  app.log.info(`Loaded ${currencies.codes().length} currencies`);
-
-  const rateResolver = buildRateResolver(currencies);
+  const di = await makeContainer();
+  app.di = di;
 
   // Стартуем HTTP (для health/ready; вебхука нет)
   const port = Number(process.env.PORT ?? 3000);
@@ -21,7 +17,7 @@ async function main() {
   app.log.info({ port }, 'HTTP server started');
 
   // Телеграм: long-polling
-  const bot = buildBot(token, { currencies, rateResolver });
+  const bot = buildBot(token, app);
   await bot.launch();
   app.log.info('Telegram bot launched (long-polling)');
 
@@ -29,11 +25,6 @@ async function main() {
   process.once('SIGINT', async () => {
     app.log.info('SIGINT');
     bot.stop('SIGINT');
-    await app.close();
-  });
-  process.once('SIGTERM', async () => {
-    app.log.info('SIGTERM');
-    bot.stop('SIGTERM');
     await app.close();
   });
 }

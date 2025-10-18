@@ -4,12 +4,6 @@ import { CurrencyCatalog } from '@/shared/currency-catalog.js';
 import { ConfirmAction } from './add/context.js';
 import { UpdateMenuAction } from './update/context.js';
 
-export function prettyZodError(e: z.ZodError): string {
-  const i = e.issues[0];
-  if (!i) return 'Некорректное значение';
-  return i.message;
-}
-
 export const NameSchema = z.string().trim().min(1, 'Название не может быть пустым');
 
 export const CurrencyCodeSchema = (cat: CurrencyCatalog) =>
@@ -22,7 +16,7 @@ export const CurrencyCodeSchema = (cat: CurrencyCatalog) =>
 export const DecimalPositiveSchema = z
   .string()
   .trim()
-  .transform((s) => s.replace(/\s/g, '').replace(',', '.')) // "7 000,5" -> "7000.5"
+  .transform((s) => s.replace(/\s/g, '').replace(',', '.'))
   .refine((s) => /^[-+]?\d+(\.\d+)?$/.test(s), {
     message: 'Введите корректное число',
   })

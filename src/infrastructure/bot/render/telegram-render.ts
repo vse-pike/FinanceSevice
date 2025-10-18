@@ -5,6 +5,10 @@ export class TelegramRender {
   static render(vm: ViewModel): View {
     const lines: string[] = [];
     let kb: InlineKeyboardMarkup | undefined;
+    let needHtml = false;
+
+    const esc = (s: string | undefined) =>
+      s?.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
     for (const n of vm.nodes) {
       switch (n.type) {
@@ -35,6 +39,19 @@ export class TelegramRender {
           break;
         }
 
+        case 'Row': {
+          const bullet = n.bullet ? '• ' : '';
+          if (n.boldLabel) {
+            needHtml = true;
+            const label = esc(n.label);
+            const value = esc(n.value?.toString());
+            lines.push(`${bullet}<b>${label}:</b> ${value}`);
+          } else {
+            lines.push(`${bullet}${esc(n.label)}: ${esc(n.value?.toString())}`);
+          }
+          break;
+        }
+
         case 'Keyboard':
           kb = {
             inline_keyboard: n.rows.map((r) =>
@@ -45,6 +62,10 @@ export class TelegramRender {
       }
     }
 
-    return { text: lines.join('\n'), keyboard: kb };
+    return {
+      text: lines.join('\n'),
+      keyboard: kb,
+      parseMode: needHtml ? 'HTML' : undefined,
+    };
   }
 }

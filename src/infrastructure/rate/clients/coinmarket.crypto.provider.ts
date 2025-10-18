@@ -27,7 +27,7 @@ export class CoinMarketCapCryptoClient implements RateClient {
     const hit = this.cache.get(cacheKey);
     if (hit && Date.now() - hit.ts < this.ttlMs) return hit.v;
 
-    const url = `${this.baseUrl}/v2/cryptocurrency/quotes/latest?symbol=${encodeURIComponent(f)}&convert=${encodeURIComponent(t)}`;
+    const url = `${this.baseUrl}/v1/cryptocurrency/quotes/latest?symbol=${encodeURIComponent(f)}&convert=${encodeURIComponent(t)}`;
 
     let json: CmcResponse;
     try {

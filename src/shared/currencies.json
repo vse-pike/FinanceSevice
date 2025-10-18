@@ -4,6 +4,10 @@
     "value": { "name": "Доллар США", "type": "FIAT" }
   },
   {
+    "code": "USDT",
+    "value": { "name": "USDT", "type": "CRYPTO" }
+  },
+  {
     "code": "RUB",
     "value": { "name": "Российский рубль", "type": "FIAT" }
   },

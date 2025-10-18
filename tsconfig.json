@@ -9,6 +9,7 @@
     "paths": {
       "@/*": ["*"]
     },
+    "typeRoots": ["./src/types", "./node_modules/@types"],
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "strict": true

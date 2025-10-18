@@ -1,37 +1,34 @@
 import { BusinessException } from '@/shared/business-exception.js';
-import { Telegraf } from 'telegraf';
 import { getErrorMessage } from './error.js';
 import { UserStateContainer } from './user-state.js';
-import { CurrencyCatalog } from '@/shared/currency-catalog.js';
 import { CommandFactory } from './command/command-factory.js';
-import { extractUser } from './command/command-helper.js';
-import { Ctx } from './command/command.js';
-import { RateResolver } from '../rate/resolver.js';
+import { extractUser, TelegramUser } from './command/command-helper.js';
+import { FastifyInstance } from 'fastify';
+import { Telegraf } from 'telegraf';
+import { Ctx } from '@/types/ctx.js';
 
 const COMMAND_PREFIX = '/';
 
-export function buildBot(
-  token: string,
-  deps: { currencies: CurrencyCatalog; rateResolver: RateResolver },
-) {
+export function buildBot(token: string, app: FastifyInstance) {
   const bot = new Telegraf(token);
   const states = new UserStateContainer();
   const factory = new CommandFactory();
 
   bot.use(async (ctx: Ctx, next) => {
     if (ctx.from) {
-      const user = extractUser(ctx);
-      ctx.state.user = user;
+      ctx.user = extractUser(ctx);
+    } else {
+      return;
     }
-    ctx.state.currencies = deps.currencies;
+    ctx.di = app.di.cradle;
     await next();
   });
 
-  bot.on('message', dispatch);
+  bot.on('message', (ctx) => dispatch(ctx as any));
   bot.on('callback_query', (ctx) => dispatch(ctx as any));
 
   async function dispatch(ctx: Ctx) {
-    const tgId = BigInt(ctx.from!.id);
+    const tgId = ctx.user.telegramId;
     const msg = 'text' in (ctx.message ?? {}) ? ((ctx.message as any).text ?? '') : '';
 
     if (msg && msg.startsWith(COMMAND_PREFIX)) {

@@ -1,20 +1,19 @@
-import { readCallbackData, readText } from '@/infrastructure/bot/command/command-helper.js';
 import { Command } from '@/infrastructure/bot/command/command.js';
-import { db } from '@/infrastructure/db/db.js';
 import { BusinessException } from '@/shared/business-exception.js';
-import { UpdateCommandCtx, UpdateAssetCtx } from './context.js';
+import { db } from '@/infrastructure/db/db.js';
+import { readCallbackData, readText } from '@/infrastructure/bot/command/command-helper.js';
+import type { PortfolioCommandCtx } from './context.js';
+import { SelectCurrencyPage } from './pages.js';
 import { TelegramRender } from '@/infrastructure/bot/render/telegram-render.js';
-import { Page } from '@/infrastructure/bot/render/render-engine.js';
-import { AskAssetListPage } from './command-pages.js';
 import { Ctx } from '@/types/ctx.js';
-import { Asset } from '@/infrastructure/db/asset-db.service.js';
+import { Page } from '@/infrastructure/bot/render/render-engine.js';
 
-export class UpdateAssetCommand extends Command {
-  static name = '/update_asset';
+export class PortfolioCommand extends Command {
+  static name = '/portfolio';
   isFinished = false;
 
-  private ctx!: UpdateCommandCtx;
-  private page!: Page<UpdateCommandCtx>;
+  private page!: Page<PortfolioCommandCtx>;
+  private ctx!: PortfolioCommandCtx;
 
   async execute(ctx: Ctx): Promise<void> {
     if (!this.initialized) {
@@ -30,18 +29,12 @@ export class UpdateAssetCommand extends Command {
       throw new BusinessException('Пользователь не найден. Невозможно показать портфель.');
 
     this.ctx = {
-      context: {
-        model: {} as Asset,
-      } as UpdateAssetCtx,
+      context: { userId: extractedUser.id },
       di: ctx.di,
-      ui: { show: async (text) => await ctx.reply(text) },
+      ui: { show: async (text: string) => await ctx.reply(text) },
     };
 
-    const assets = await ctx.di.assetDbService.listAssets(extractedUser.id);
-
-    this.ctx.context.assets = assets;
-
-    this.page = new AskAssetListPage();
+    this.page = new SelectCurrencyPage();
 
     const rawView = this.page.render(this.ctx);
     const renderedView = TelegramRender.render(rawView);

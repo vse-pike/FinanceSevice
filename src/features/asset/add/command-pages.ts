@@ -1,5 +1,5 @@
-import { AssetType, ValuationMode } from '@prisma/client';
-import { Asset, ConfirmAction, type AddCommandCtx } from './context.js';
+import { AssetType, Prisma, ValuationMode } from '@prisma/client';
+import { ConfirmAction, type AddCommandCtx } from './context.js';
 import {
   NameSchema,
   AssetTypeSchema,
@@ -7,7 +7,6 @@ import {
   DecimalPositiveSchema,
   DecimalNonNegSchema,
   ConfirmActionSchema,
-  prettyZodError,
 } from '../validations.js';
 import type {
   NextResult,
@@ -15,27 +14,12 @@ import type {
   Result,
   ViewModel,
 } from '@/infrastructure/bot/render/render-engine.js';
+import { prettyZodError } from '@/features/validation.js';
+import { Asset } from '@/infrastructure/db/asset-db.service.js';
+import { typeLabel } from '@/features/helpers.js';
 
 function isMarket(m: Asset): boolean {
   return !!m.type && ![AssetType.RE, AssetType.COMMODITY].find((e) => e === m.type);
-}
-
-function typeLabel(t?: AssetType): string | undefined {
-  if (!t) return undefined;
-  switch (t) {
-    case AssetType.RE:
-      return 'Недвижимость';
-    case AssetType.STOCK:
-      return 'Акции';
-    case AssetType.CRYPTO:
-      return 'Крипто';
-    case AssetType.DEBT:
-      return 'Займы';
-    case AssetType.FIAT:
-      return 'Фиатные счета';
-    case AssetType.COMMODITY:
-      return 'Коммодити';
-  }
 }
 
 export class AskNamePage implements Page<AddCommandCtx> {
@@ -196,7 +180,7 @@ export class AskCurrencyPage implements Page<AddCommandCtx> {
 
   handleInput(ctx: AddCommandCtx, input: string): Result {
     const m = ctx.context.model!;
-    const v = CurrencyCodeSchema(ctx.deps.currencies).safeParse(input);
+    const v = CurrencyCodeSchema(ctx.di.currencies).safeParse(input);
     if (!v.success) return { success: false, message: prettyZodError(v.error) };
     m.currency = v.data;
     return { success: true };
@@ -247,7 +231,7 @@ export class AskQtyPage implements Page<AddCommandCtx> {
     const m = ctx.context.model!;
     const v = DecimalPositiveSchema.safeParse(input);
     if (!v.success) return { success: false, message: prettyZodError(v.error) };
-    m.qty = v.data;
+    m.qty = new Prisma.Decimal(v.data);
     return { success: true };
   }
 
@@ -303,7 +287,7 @@ export class AskTotalPage implements Page<AddCommandCtx> {
     const m = ctx.context.model!;
     const v = DecimalPositiveSchema.safeParse(input);
     if (!v.success) return { success: false, message: prettyZodError(v.error) };
-    m.total = v.data;
+    m.total = new Prisma.Decimal(v.data);
     return { success: true };
   }
 
@@ -356,7 +340,7 @@ export class AskDebtPage implements Page<AddCommandCtx> {
     const m = ctx.context.model!;
     const v = DecimalNonNegSchema.safeParse(input);
     if (!v.success) return { success: false, message: prettyZodError(v.error) };
-    m.debt = v.data;
+    m.debt = new Prisma.Decimal(v.data);
     return { success: true };
   }
 
@@ -439,14 +423,14 @@ export class ConfirmPage implements Page<AddCommandCtx> {
   async next(ctx: AddCommandCtx): Promise<NextResult<AddCommandCtx>> {
     const m = ctx.context.model!;
     if (ctx.context.confirm === ConfirmAction.APPROVE) {
-      await ctx.services.saveAsset({
-        name: m.name!,
-        type: m.type!,
-        currency: m.currency!,
-        valuationMode: m.valuationMode!,
-        qty: m.valuationMode === ValuationMode.MANUAL ? 1 : m.qty!,
-        total: m.valuationMode === ValuationMode.MANUAL ? m.total! : null,
-        debt: m.valuationMode === ValuationMode.MANUAL ? m.debt! : null,
+      await ctx.di.assetDbService.saveAssetTx(ctx.context.userId, {
+        name: m.name,
+        type: m.type,
+        currency: m.currency,
+        valuationMode: m.valuationMode,
+        qty: m.valuationMode === ValuationMode.MANUAL ? new Prisma.Decimal(1) : m.qty,
+        total: m.valuationMode === ValuationMode.MANUAL ? m.total : null,
+        debt: m.valuationMode === ValuationMode.MANUAL ? m.debt : null,
       });
       ctx.ui?.show?.('✅ Актив сохранён');
     } else {
