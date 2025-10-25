@@ -31,26 +31,22 @@ CREATE TABLE "public"."Asset" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."AssetCommit" (
+CREATE TABLE "public"."DailySnapshot" (
     "id" TEXT NOT NULL,
     "assetId" TEXT NOT NULL,
-    "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "qty" DECIMAL(38,12),
+    "userId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "type" "public"."AssetType" NOT NULL,
+    "currency" TEXT NOT NULL,
+    "qty" DECIMAL(38,12) NOT NULL,
+    "valuationMode" "public"."ValuationMode" NOT NULL DEFAULT 'MARKET',
     "total" DECIMAL(38,2),
     "debt" DECIMAL(38,2),
-
-    CONSTRAINT "AssetCommit_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."DailySnapshot" (
-    "userAssetId" TEXT NOT NULL,
-    "date" TIMESTAMP(3) NOT NULL,
-    "qty" DECIMAL(38,12) NOT NULL,
     "valuesJson" JSONB NOT NULL,
     "metaJson" JSONB,
+    "dateTime" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "DailySnapshot_pkey" PRIMARY KEY ("userAssetId","date")
+    CONSTRAINT "DailySnapshot_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -60,19 +56,16 @@ CREATE UNIQUE INDEX "User_telegramId_key" ON "public"."User"("telegramId");
 CREATE INDEX "Asset_userId_idx" ON "public"."Asset"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Asset_userId_name_key" ON "public"."Asset"("userId", "name");
+CREATE INDEX "DailySnapshot_dateTime_idx" ON "public"."DailySnapshot"("dateTime");
 
 -- CreateIndex
-CREATE INDEX "AssetCommit_assetId_timestamp_idx" ON "public"."AssetCommit"("assetId", "timestamp");
-
--- CreateIndex
-CREATE INDEX "DailySnapshot_date_idx" ON "public"."DailySnapshot"("date");
+CREATE UNIQUE INDEX "DailySnapshot_assetId_dateTime_key" ON "public"."DailySnapshot"("assetId", "dateTime");
 
 -- AddForeignKey
 ALTER TABLE "public"."Asset" ADD CONSTRAINT "Asset_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."AssetCommit" ADD CONSTRAINT "AssetCommit_assetId_fkey" FOREIGN KEY ("assetId") REFERENCES "public"."Asset"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."DailySnapshot" ADD CONSTRAINT "DailySnapshot_assetId_fkey" FOREIGN KEY ("assetId") REFERENCES "public"."Asset"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."DailySnapshot" ADD CONSTRAINT "DailySnapshot_userAssetId_fkey" FOREIGN KEY ("userAssetId") REFERENCES "public"."Asset"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."DailySnapshot" ADD CONSTRAINT "DailySnapshot_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

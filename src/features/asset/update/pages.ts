@@ -8,6 +8,7 @@ import {
 import { UpdateCommandCtx, UpdateMenuAction } from './context.js';
 import { Prisma, ValuationMode } from '@prisma/client';
 import { prettyZodError } from '@/features/validation.js';
+import { db } from '@/infrastructure/db/db.js';
 
 export class AskAssetListPage implements Page<UpdateCommandCtx> {
   render(ctx: UpdateCommandCtx, error?: string): ViewModel {
@@ -110,7 +111,8 @@ export class AssetOptionPage implements Page<UpdateCommandCtx> {
     }
 
     if (ctx.context.action === UpdateMenuAction.DELETE) {
-      await ctx.di.assetDbService.deleteAssetTx(ctx.context.model!.id);
+      await db.asset.delete({ where: { id: ctx.context.model!.id } });
+
       ctx.ui?.show?.(`🗑️ Актив «${ctx.context.model?.name}» удалён`);
     }
 
@@ -144,15 +146,18 @@ export class UpdateQtyPage implements Page<UpdateCommandCtx> {
 
   async next(ctx: UpdateCommandCtx): Promise<NextResult<UpdateCommandCtx>> {
     const m = ctx.context.model!;
-    await ctx.di.assetDbService.updateAssetTx(ctx.context.userId, {
-      id: m.id,
-      type: m.type,
-      name: m.name,
-      currency: m.currency,
-      valuationMode: m.valuationMode,
-      qty: m.qty,
-      total: m.total,
-      debt: m.debt,
+    await db.asset.update({
+      where: {
+        id: m.id,
+      },
+      data: {
+        name: m.name,
+        currency: m.currency,
+        valuationMode: m.valuationMode,
+        qty: m.qty,
+        total: m.total,
+        debt: m.debt,
+      },
     });
     ctx.ui?.show?.(`✅ «${m.name}»: количество обновлено на ${m.qty} ${m.currency}`);
     return { done: true };
@@ -225,15 +230,18 @@ export class UpdateDebtPage implements Page<UpdateCommandCtx> {
 
   async next(ctx: UpdateCommandCtx): Promise<NextResult<UpdateCommandCtx>> {
     const m = ctx.context.model!;
-    await ctx.di.assetDbService.updateAssetTx(ctx.context.userId, {
-      id: m.id,
-      type: m.type,
-      name: m.name,
-      currency: m.currency,
-      valuationMode: m.valuationMode,
-      qty: m.qty,
-      total: m.total,
-      debt: m.debt,
+    await db.asset.update({
+      where: {
+        id: m.id,
+      },
+      data: {
+        name: m.name,
+        currency: m.currency,
+        valuationMode: m.valuationMode,
+        qty: m.qty,
+        total: m.total,
+        debt: m.debt,
+      },
     });
     ctx.ui?.show?.(`✅ «${m.name}»: долг/оценка обновлены → ${m.debt}/${m.total} ${m.currency}`);
     return { done: true };

@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import { buildBot } from '@/infrastructure/bot/telegraf.js';
 import { env } from './env.js';
 import { makeContainer } from './di.js';
+import snapshotCron from './infrastructure/cron/snapshot-cron.js';
 
 async function main() {
   const app = Fastify({ logger: true });
@@ -9,6 +10,9 @@ async function main() {
 
   const di = await makeContainer();
   app.di = di;
+
+  // Регистрируем крон джобу
+  app.register(snapshotCron);
 
   // Стартуем HTTP (для health/ready; вебхука нет)
   const port = Number(process.env.PORT ?? 3000);

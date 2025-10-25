@@ -1,6 +1,6 @@
 import { Message } from 'telegraf/types';
 import { AppCradle } from '@/di.js';
-import { Asset } from '@/infrastructure/db/asset-db.service.js';
+import { Asset } from '@prisma/client';
 
 export enum ConfirmAction {
   APPROVE = 'APPROVE',

@@ -3,19 +3,21 @@ import type {
   Result,
   NextResult,
   ViewModel,
+  UiNode,
 } from '@/infrastructure/bot/render/render-engine.js';
 import type { PortfolioCommandCtx } from './context.js';
 import { CurrencySchema } from './validation.js';
 import { prettyZodError } from '@/features/validation.js';
 import { Prisma, ValuationMode } from '@prisma/client';
-import { typeLabel } from '@/features/helpers.js';
+import { fmtNum, fmtPercent, typeLabel } from '@/features/helpers.js';
+import { db } from '@/infrastructure/db/db.js';
 
 export class SelectCurrencyPage implements Page<PortfolioCommandCtx> {
   render(ctx: PortfolioCommandCtx, error?: string): ViewModel {
     const rows = ctx.di.currencies.all().map((c) => [{ text: c.code, cb: `cur:${c.code}` }]);
     rows.unshift([{ text: 'В исходных', cb: 'cur:DEFAULT' }]);
 
-    const nodes: ViewModel['nodes'] = [
+    const nodes: UiNode[] = [
       { type: 'Title', text: '📊 Портфель' },
       { type: 'Paragraph', text: 'Укажите, в перерасчёте какой валюты вывести активы:' },
       { type: 'Keyboard', rows },
@@ -33,7 +35,10 @@ export class SelectCurrencyPage implements Page<PortfolioCommandCtx> {
   }
 
   async next(ctx: PortfolioCommandCtx): Promise<NextResult<PortfolioCommandCtx>> {
-    const assets = await ctx.di.assetDbService.listAssets(ctx.context.userId);
+    const assets = await db.asset.findMany({
+      where: { userId: ctx.context.userId },
+      orderBy: { createdAt: 'asc' },
+    });
 
     const targetCurrency = ctx.context.targetCurrency!;
 
@@ -72,10 +77,12 @@ export class SelectCurrencyPage implements Page<PortfolioCommandCtx> {
       ctx.context.assets = convertedAssets;
       ctx.context.gross = gross;
       ctx.context.debt = debt;
+      ctx.context.net = gross.sub(debt);
     } else {
       ctx.context.assets = assets;
       ctx.context.gross = undefined;
       ctx.context.debt = undefined;
+      ctx.context.net = undefined;
     }
 
     if (ctx.context.assets!.length === 0) {
@@ -100,7 +107,7 @@ export class ShowPortfolioPage implements Page<PortfolioCommandCtx> {
 
       const gross = ctx.context.gross!;
       const debt = ctx.context.debt!;
-      const net = gross.sub(debt);
+      const net = ctx.context.net;
 
       nodes.push({ type: 'Row', label: '🟡 Стоимость', value: fmtNum(gross), boldLabel: true });
       nodes.push({ type: 'Row', label: '🟠 Долг', value: fmtNum(debt), boldLabel: true });
@@ -171,7 +178,7 @@ export class ShowPortfolioPage implements Page<PortfolioCommandCtx> {
           const perNet = it.total!.sub(it.debt!);
           nodes.push({
             type: 'Row',
-            label: 'Чистая по активу',
+            label: 'Чистая',
             value: fmtNum(perNet),
             boldLabel: true,
             bullet: true,
@@ -229,26 +236,4 @@ export class ShowPortfolioPage implements Page<PortfolioCommandCtx> {
   async next(): Promise<NextResult<PortfolioCommandCtx>> {
     return { done: true };
   }
-}
-
-function fmtNum(value: Prisma.Decimal | number | null | undefined): string {
-  const n =
-    value instanceof Prisma.Decimal
-      ? Number(value.toFixed(8))
-      : typeof value === 'number'
-        ? value
-        : 0;
-
-  return new Intl.NumberFormat('ru-RU', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 4,
-  }).format(n);
-}
-
-function fmtPercent(frac: Prisma.Decimal): string {
-  const n = Number(frac.mul(100).toFixed(6));
-  return `${new Intl.NumberFormat('ru-RU', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(n)}%`;
 }

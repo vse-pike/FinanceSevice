@@ -15,10 +15,10 @@ import type {
   ViewModel,
 } from '@/infrastructure/bot/render/render-engine.js';
 import { prettyZodError } from '@/features/validation.js';
-import { Asset } from '@/infrastructure/db/asset-db.service.js';
 import { typeLabel } from '@/features/helpers.js';
+import { db } from '@/infrastructure/db/db.js';
 
-function isMarket(m: Asset): boolean {
+function isMarket(m: { type: AssetType }): boolean {
   return !!m.type && ![AssetType.RE, AssetType.COMMODITY].find((e) => e === m.type);
 }
 
@@ -423,14 +423,17 @@ export class ConfirmPage implements Page<AddCommandCtx> {
   async next(ctx: AddCommandCtx): Promise<NextResult<AddCommandCtx>> {
     const m = ctx.context.model!;
     if (ctx.context.confirm === ConfirmAction.APPROVE) {
-      await ctx.di.assetDbService.saveAssetTx(ctx.context.userId, {
-        name: m.name,
-        type: m.type,
-        currency: m.currency,
-        valuationMode: m.valuationMode,
-        qty: m.valuationMode === ValuationMode.MANUAL ? new Prisma.Decimal(1) : m.qty,
-        total: m.valuationMode === ValuationMode.MANUAL ? m.total : null,
-        debt: m.valuationMode === ValuationMode.MANUAL ? m.debt : null,
+      await db.asset.create({
+        data: {
+          userId: ctx.context.userId,
+          name: m.name,
+          type: m.type,
+          currency: m.currency,
+          valuationMode: m.valuationMode,
+          qty: m.valuationMode === ValuationMode.MANUAL ? new Prisma.Decimal(1) : m.qty,
+          total: m.valuationMode === ValuationMode.MANUAL ? m.total : null,
+          debt: m.valuationMode === ValuationMode.MANUAL ? m.debt : null,
+        },
       });
       ctx.ui?.show?.('✅ Актив сохранён');
     } else {

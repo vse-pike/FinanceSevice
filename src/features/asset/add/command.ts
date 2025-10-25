@@ -2,12 +2,11 @@ import { Command } from '@/infrastructure/bot/command/command.js';
 import { BusinessException } from '@/shared/business-exception.js';
 import { db } from '@/infrastructure/db/db.js';
 import { AddAssetCtx, AddCommandCtx } from './context.js';
-import { AskNamePage } from './command-pages.js';
+import { AskNamePage } from './pages.js';
 import { readCallbackData, readText } from '@/infrastructure/bot/command/command-helper.js';
 import { Page } from '@/infrastructure/bot/render/render-engine.js';
 import { TelegramRender } from '@/infrastructure/bot/render/telegram-render.js';
 import { Ctx } from '@/types/ctx.js';
-import { Asset } from '@/infrastructure/db/asset-db.service.js';
 
 export class AddAssetCommand extends Command {
   static name = '/add_asset';
@@ -32,7 +31,7 @@ export class AddAssetCommand extends Command {
     this.ctx = {
       context: {
         userId: extractedUser.id,
-        model: {} as Asset,
+        model: {},
       } as AddAssetCtx,
       di: ctx.di,
       ui: { show: async (text) => await ctx.reply(text) },

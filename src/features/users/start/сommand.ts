@@ -1,9 +1,9 @@
 import { db } from '@/infrastructure/db/db.js';
 import { BusinessException } from '../../../shared/business-exception.js';
-import { ICommand } from '@/infrastructure/bot/command/command.js';
+import { Command } from '@/infrastructure/bot/command/command.js';
 import { Ctx } from '@/types/ctx.js';
 
-export class StartCommand implements ICommand {
+export class StartCommand extends Command {
   static name = '/start';
   isFinished = false;
 

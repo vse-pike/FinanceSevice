@@ -2,7 +2,7 @@ import { BusinessException } from '@/shared/business-exception.js';
 import { getErrorMessage } from './error.js';
 import { UserStateContainer } from './user-state.js';
 import { CommandFactory } from './command/command-factory.js';
-import { extractUser, TelegramUser } from './command/command-helper.js';
+import { extractUser } from './command/command-helper.js';
 import { FastifyInstance } from 'fastify';
 import { Telegraf } from 'telegraf';
 import { Ctx } from '@/types/ctx.js';

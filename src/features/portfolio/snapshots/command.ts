@@ -1,19 +1,19 @@
-import { readCallbackData, readText } from '@/infrastructure/bot/command/command-helper.js';
 import { Command } from '@/infrastructure/bot/command/command.js';
-import { db } from '@/infrastructure/db/db.js';
 import { BusinessException } from '@/shared/business-exception.js';
-import { UpdateCommandCtx, UpdateAssetCtx } from './context.js';
+import { db } from '@/infrastructure/db/db.js';
+import { readCallbackData, readText } from '@/infrastructure/bot/command/command-helper.js';
 import { TelegramRender } from '@/infrastructure/bot/render/telegram-render.js';
+import { SelectSnapshotsPage } from './pages.js';
+import type { SnapshotCommandCtx } from './context.js';
 import { Page } from '@/infrastructure/bot/render/render-engine.js';
-import { AskAssetListPage } from './pages.js';
 import { Ctx } from '@/types/ctx.js';
 
-export class UpdateAssetCommand extends Command {
-  static name = '/update_asset';
+export class SnapshotsCommand extends Command {
+  static name = '/snapshots';
   isFinished = false;
 
-  private ctx!: UpdateCommandCtx;
-  private page!: Page<UpdateCommandCtx>;
+  private ctx!: SnapshotCommandCtx;
+  private page!: Page<SnapshotCommandCtx>;
 
   async execute(ctx: Ctx): Promise<void> {
     if (!this.initialized) {
@@ -29,23 +29,13 @@ export class UpdateAssetCommand extends Command {
       throw new BusinessException('Пользователь не найден. Невозможно показать портфель.');
 
     this.ctx = {
-      context: {
-        model: {},
-      } as UpdateAssetCtx,
+      context: { userId: extractedUser.id },
+      di: ctx.di,
       ui: { show: async (text) => await ctx.reply(text) },
     };
 
-    const assets = await db.asset.findMany({
-      where: { userId: extractedUser.id },
-      orderBy: { createdAt: 'asc' },
-    });
-
-    this.ctx.context.assets = assets;
-
-    this.page = new AskAssetListPage();
-
-    const rawView = this.page.render(this.ctx);
-    const renderedView = TelegramRender.render(rawView);
+    this.page = new SelectSnapshotsPage();
+    const renderedView = TelegramRender.render(this.page.render(this.ctx));
     await this.safeEdit(ctx, renderedView.text, renderedView.keyboard, renderedView.parseMode);
     this.initialized = true;
   }

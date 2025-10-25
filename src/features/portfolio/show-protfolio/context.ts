@@ -1,6 +1,5 @@
 import { AppCradle } from '@/di.js';
-import { Asset } from '@/infrastructure/db/asset-db.service.js';
-import { Prisma } from '@prisma/client';
+import { Asset, Prisma } from '@prisma/client';
 import { Message } from 'telegraf/types';
 
 export type PortfolioCtx = {
@@ -9,6 +8,7 @@ export type PortfolioCtx = {
   assets?: Asset[];
   gross?: Prisma.Decimal;
   debt?: Prisma.Decimal;
+  net?: Prisma.Decimal;
 };
 
 export interface PortfolioCommandCtx {

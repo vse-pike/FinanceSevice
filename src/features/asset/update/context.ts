@@ -1,6 +1,5 @@
 import { Message } from 'telegraf/types';
-import { AppCradle } from '@/di.js';
-import { Asset } from '@/infrastructure/db/asset-db.service.js';
+import { Asset } from '@prisma/client';
 
 export enum UpdateMenuAction {
   UPDATE = 'UPDATE',
@@ -9,14 +8,13 @@ export enum UpdateMenuAction {
 
 export type UpdateAssetCtx = {
   userId: string;
-  assets?: Asset[];
-  model?: Asset;
+  assets?: Partial<Asset>[];
+  model?: Partial<Asset>;
   action?: UpdateMenuAction | null;
 };
 
 export interface UpdateCommandCtx {
   context: UpdateAssetCtx;
-  di: AppCradle;
   ui?: {
     show?: (text: string) => Promise<Message.TextMessage>;
   };

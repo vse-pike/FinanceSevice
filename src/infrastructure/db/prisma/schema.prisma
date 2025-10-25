@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ——— справочники ———
 enum AssetType {
   FIAT
   CRYPTO
@@ -22,68 +21,53 @@ enum ValuationMode {
   MANUAL
 }
 
-// ——— пользователи ———
 model User {
-  id         String   @id @default(uuid())
-  telegramId BigInt   @unique
-  username   String
-  createdAt  DateTime @default(now())
-  assets     Asset[]
+  id            String          @id @default(uuid())
+  telegramId    BigInt          @unique
+  username      String
+  createdAt     DateTime        @default(now())
+  assets        Asset[]
+  DailySnapshot DailySnapshot[]
 }
 
-// ——— актив ———
-// qty есть всегда; оценка либо MARKET (цена с провайдера), либо MANUAL (хранимая).
-// долг влияет только на net (equity), не на gross.
 model Asset {
-  id       String    @id @default(uuid())
-  userId   String
-  name     String
-  type     AssetType
-  currency String
-  qty      Decimal   @db.Decimal(38, 12)
-
+  id            String        @id @default(uuid())
+  userId        String
+  name          String
+  type          AssetType
+  currency      String
+  qty           Decimal       @db.Decimal(38, 12)
   valuationMode ValuationMode @default(MARKET)
-  // MANUAL-оценка
   total         Decimal?      @db.Decimal(38, 2)
-  // долг по активу (ипотека/кредит): влияет на net, не на gross
   debt          Decimal?      @db.Decimal(38, 2)
 
   createdAt DateTime @default(now())
 
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  commits   AssetCommit[]
   snapshots DailySnapshot[]
 
-  @@unique([userId, name])
   @@index([userId])
 }
 
-// ——— коммиты изменений состояния ———
-model AssetCommit {
-  id        String   @id @default(uuid())
-  assetId   String
-  timestamp DateTime @default(now())
-
-  qty   Decimal  @db.Decimal(38, 12)
-  total Decimal? @db.Decimal(38, 2)
-  debt  Decimal? @db.Decimal(38, 2)
-
-  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
-
-  @@index([assetId, timestamp])
-}
-
-// ——— ежедневные снапшоты ———
 model DailySnapshot {
-  userAssetId String
-  date        DateTime
-  qty         Decimal  @db.Decimal(38, 12)
+  id            String        @id @default(uuid())
+  assetId       String
+  userId        String
+  name          String
+  type          AssetType
+  currency      String
+  qty           Decimal       @db.Decimal(38, 12)
+  valuationMode ValuationMode @default(MARKET)
+  total         Decimal?      @db.Decimal(38, 2)
+  debt          Decimal?      @db.Decimal(38, 2)
 
   valuesJson Json
   metaJson   Json?
 
-  asset Asset @relation(fields: [userAssetId], references: [id], onDelete: Cascade)
+  dateTime DateTime @default(now())
+  asset    Asset    @relation(fields: [assetId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
 
-  @@id([userAssetId, date])
-  @@index([date])
+  @@unique([assetId, dateTime])
+  @@index([dateTime])
 }
