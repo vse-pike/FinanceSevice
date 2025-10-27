@@ -52,7 +52,7 @@ export class SelectSnapshotsPage implements Page<SnapshotCommandCtx> {
     });
 
     if (shots.length === 0) {
-      ctx.ui?.show?.('Портфель пуст.');
+      ctx.ui?.show?.('Портфель пуст или снапшоты еще не успели сформироваться.');
       return { done: true };
     }
 
