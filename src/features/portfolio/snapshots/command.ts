@@ -30,7 +30,6 @@ export class SnapshotsCommand extends Command {
 
     this.ctx = {
       context: { userId: extractedUser.id },
-      di: ctx.di,
       ui: { show: async (text) => await ctx.reply(text) },
     };
 

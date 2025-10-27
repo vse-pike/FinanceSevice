@@ -1,23 +1,27 @@
 {
-  "name": "financesevice",
+  "name": "financeservice",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "dist/app.js",
   "scripts": {
     "dev": "tsx watch -r tsconfig-paths/register src/app.ts",
-    "build": "tsc",
-    "start": "node dist/app.js",
-    "test": "vitest run",
+    "prebuild": "prisma generate",
+    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
+    "postbuild": "cp src/shared/currencies.json dist/shared/currencies.json",
+    "start:prod": "npx prisma migrate deploy && node dist/app.js",
+    "test": "vitest --run",
     "coverage": "vitest run --coverage",
     "prisma:dev": "prisma migrate dev",
     "prisma:gen": "prisma generate",
     "prisma:studio": "prisma studio",
-    "prisma:status": "prisma migrate status"
+    "prisma:status": "prisma migrate status",
+    "gen:tests": "tsx tools/gen-tests.ts \"src/**/*.{ts,tsx}\"",
+    "gen:tests:dry": "tsx tools/gen-tests.ts \"src/**/*.{ts,tsx}\" --dry"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "prisma": {
     "schema": "src/infrastructure/db/prisma/schema.prisma"
   },
@@ -34,13 +38,19 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
-    "@types/node": "^24.5.2",
+    "@types/node": "^24.9.1",
+    "@vitest/coverage-v8": "^4.0.3",
+    "@vitest/ui": "^4.0.3",
     "c8": "^10.1.3",
     "eslint": "^9.36.0",
+    "globby": "^15.0.0",
     "prettier": "^3.6.2",
+    "ts-morph": "^27.0.2",
+    "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
+    "undici": "^7.16.0",
+    "vitest": "^4.0.3"
   }
 }

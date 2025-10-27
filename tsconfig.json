@@ -6,13 +6,12 @@
     "outDir": "dist",
     "rootDir": "src",
     "baseUrl": "src",
-    "paths": {
-      "@/*": ["*"]
-    },
-    "typeRoots": ["./src/types", "./node_modules/@types"],
+    "paths": { "@/*": ["*"] },
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "strict": true
+    "strict": true,
+    "types": ["node"]
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["tests", "tools"]
 }

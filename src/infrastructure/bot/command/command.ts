@@ -1,11 +1,7 @@
 import { Ctx } from '@/types/ctx.js';
 import { InlineKeyboardMarkup } from 'telegraf/types';
 
-export interface ICommand {
-  execute(ctx: Ctx): Promise<void>;
-}
-
-export abstract class Command implements ICommand {
+export abstract class Command {
   isFinished: boolean = false;
   private editMsgId?: number;
   protected initialized: boolean = false;

@@ -1,13 +1,13 @@
-import { ICommand } from './command/command.js';
+import { Command } from './command/command.js';
 
 export class UserStateContainer {
-  private states = new Map<bigint, ICommand>();
+  private states = new Map<bigint, Command>();
 
   get(userId: bigint) {
     return this.states.get(userId);
   }
 
-  set(userId: bigint, cmd: ICommand) {
+  set(userId: bigint, cmd: Command) {
     this.states.set(userId, cmd);
   }
 
