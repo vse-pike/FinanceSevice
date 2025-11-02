@@ -1,3 +1,4 @@
+import { loggers } from '@/logger.js';
 import { httpGetJson } from './http.js';
 import { ExchangeRateError, RateClient } from './rate.client.js';
 
@@ -12,12 +13,13 @@ export class ExchangeRateFiatClient implements RateClient {
   private readonly baseUrl = 'https://v6.exchangerate-api.com';
   private readonly ttlMs: number;
   private cache = new Map<string, { v: number; ts: number }>();
+  private logger = loggers.http.child({ client: this.baseUrl });
 
   constructor(
     private readonly apiKey: string,
     opts?: { ttlMs?: number },
   ) {
-    if (!apiKey) throw new ExchangeRateError('ExchangeRateFiat: API key is required');
+    if (!apiKey) throw new ExchangeRateError('Не передан ключ API');
     this.ttlMs = opts?.ttlMs ?? 60_000;
   }
 
@@ -31,18 +33,20 @@ export class ExchangeRateFiatClient implements RateClient {
     if (hit && Date.now() - hit.ts < this.ttlMs) return hit.v;
 
     const url = `${this.baseUrl}/v6/${this.apiKey}/pair/${encodeURIComponent(f)}/${encodeURIComponent(t)}`;
-    let data: OEResponse;
+
     try {
-      data = await httpGetJson<OEResponse>(url);
+      this.logger.info({ from: f, to: t }, 'Получение курса фиатной валюты...');
+      const data = await httpGetJson<OEResponse>(url);
+
+      if (data.result !== 'success' || typeof data.conversion_rate !== 'number') {
+        throw new ExchangeRateError(`Запрос с ошибкой для: ${f}->${t}`);
+      }
+
+      this.cache.set(cacheKey, { v: data.conversion_rate, ts: Date.now() });
+      this.logger.info({ from: f, to: t, rate: data.conversion_rate }, 'Курс получен');
+      return data.conversion_rate;
     } catch (e) {
-      throw new ExchangeRateError(`ExchangeRateFiat: request failed`, e);
+      throw new ExchangeRateError(`Запрос завершился ошибкой`, e);
     }
-
-    if (data.result !== 'success' || typeof data.conversion_rate !== 'number') {
-      throw new ExchangeRateError(`ExchangeRateFiat: invalid response for ${f}->${t}`);
-    }
-
-    this.cache.set(cacheKey, { v: data.conversion_rate, ts: Date.now() });
-    return data.conversion_rate;
   }
 }

@@ -1,3 +1,4 @@
+import { loggers } from '@/logger.js';
 import { httpGetJson } from './http.js';
 import { RateClient, ExchangeRateError } from './rate.client.js';
 
@@ -9,12 +10,13 @@ export class CoinMarketCapCryptoClient implements RateClient {
   private readonly baseUrl = 'https://pro-api.coinmarketcap.com';
   private readonly ttlMs: number;
   private cache = new Map<string, { v: number; ts: number }>();
+  private logger = loggers.http.child({ client: this.baseUrl });
 
   constructor(
     private readonly apiKey: string,
     opts?: { ttlMs?: number },
   ) {
-    if (!apiKey) throw new ExchangeRateError('CMC: API key is required');
+    if (!apiKey) throw new ExchangeRateError('Не передан ключ API');
     this.ttlMs = opts?.ttlMs ?? 30_000;
   }
 
@@ -29,25 +31,22 @@ export class CoinMarketCapCryptoClient implements RateClient {
 
     const url = `${this.baseUrl}/v1/cryptocurrency/quotes/latest?symbol=${encodeURIComponent(f)}&convert=${encodeURIComponent(t)}`;
 
-    let json: CmcResponse;
     try {
-      json = await httpGetJson<CmcResponse>(url, {
+      this.logger.info({ from: f, to: t }, 'Получение курса фиатной валюты...');
+      const json = await httpGetJson<CmcResponse>(url, {
         headers: { 'X-CMC_PRO_API_KEY': this.apiKey },
-        timeoutMs: 10_000,
       });
-    } catch (e) {
-      throw new ExchangeRateError(`CMC: request failed`, e);
+
+      const price = json.data?.[f]?.quote?.[t]?.price;
+      if (typeof price !== 'number' || !Number.isFinite(price)) {
+        throw new ExchangeRateError(`Запрос с ошибкой для: ${f}->${t}`);
+      }
+
+      this.cache.set(cacheKey, { v: price, ts: Date.now() });
+      this.logger.info({ from: f, to: t, rate: price }, 'Курс получен');
+      return price;
+    } catch (err) {
+      throw new ExchangeRateError(`Запрос завершился ошибкой`, err);
     }
-
-    const sym = json.data?.[f];
-    const q = sym?.quote?.[t];
-    const price = q?.price;
-
-    if (typeof price !== 'number' || !Number.isFinite(price)) {
-      throw new ExchangeRateError(`CMC: quote not found for ${f}->${t}`);
-    }
-
-    this.cache.set(cacheKey, { v: price, ts: Date.now() });
-    return price;
   }
 }

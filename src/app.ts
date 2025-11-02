@@ -3,9 +3,10 @@ import { buildBot } from '@/infrastructure/bot/telegraf.js';
 import { env } from './env.js';
 import { makeContainer } from './di.js';
 import snapshotCron from './infrastructure/cron/snapshot-cron.js';
+import { loggers } from './logger.js';
 
 async function main() {
-  const app = Fastify({ logger: true });
+  const app = Fastify();
   const token = env.BOT_TOKEN;
 
   const di = await makeContainer();
@@ -18,16 +19,14 @@ async function main() {
   const port = Number(process.env.PORT ?? 3000);
   const host = '0.0.0.0';
   await app.listen({ port, host });
-  app.log.info({ port }, 'HTTP server started');
-
-  // Телеграм: long-polling
+  loggers.http.info('HTTP сервер запущен');
   const bot = buildBot(token, app);
+
   await bot.launch();
-  app.log.info('Telegram bot launched (long-polling)');
 
   // Graceful shutdown
   process.once('SIGINT', async () => {
-    app.log.info('SIGINT');
+    loggers.http.info('HTTP сервер остановлен');
     bot.stop('SIGINT');
     await app.close();
   });

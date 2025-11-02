@@ -8,7 +8,7 @@ export interface CurrencyCatalogExtension {
   has(code: string): boolean;
 }
 
-export interface IRateService extends RateClient {
+export interface IRateService {
   convertAmount(amount: Prisma.Decimal, from: string, to: string): Promise<Prisma.Decimal>;
   convertTotalAmountWithDebt(
     totalAmount: Prisma.Decimal,
@@ -25,7 +25,7 @@ export class RateService implements IRateService {
     private readonly catalog: CurrencyCatalogExtension,
   ) {}
 
-  async getRate(from: string, to: string): Promise<number> {
+  private async getRate(from: string, to: string): Promise<number> {
     from = from.toUpperCase();
     to = to.toUpperCase();
     if (from === to) return 1;

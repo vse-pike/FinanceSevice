@@ -1,9 +1,14 @@
-export class BusinessException extends Error {
-  code?: string;
+export abstract class AppError {
+  name?: string;
+  message?: string;
+}
+
+export class BusinessException extends AppError {
   cleatState?: boolean;
 
   constructor(message: string, clearState?: boolean) {
-    super(message);
+    super();
+    this.message = message;
     this.name = 'BusinessException';
     this.cleatState = clearState;
   }

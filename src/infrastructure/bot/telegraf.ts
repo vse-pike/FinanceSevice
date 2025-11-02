@@ -1,4 +1,4 @@
-import { BusinessException } from '@/shared/business-exception.js';
+import { AppError, BusinessException } from '@/shared/business-exception.js';
 import { getErrorMessage } from './error.js';
 import { UserStateContainer } from './user-state.js';
 import { CommandFactory } from './command/command-factory.js';
@@ -6,6 +6,7 @@ import { extractUser } from './command/command-helper.js';
 import { FastifyInstance } from 'fastify';
 import { Telegraf } from 'telegraf';
 import { Ctx } from '@/types/ctx.js';
+import { loggers } from '@/logger.js';
 
 const COMMAND_PREFIX = '/';
 
@@ -15,17 +16,24 @@ export function buildBot(token: string, app: FastifyInstance) {
   const factory = new CommandFactory();
 
   bot.use(async (ctx: Ctx, next) => {
-    if (ctx.from) {
-      ctx.user = extractUser(ctx);
-    } else {
-      return;
-    }
+    loggers.telegram.info(
+      { userId: ctx.from?.id, username: ctx.from?.username },
+      `Получено сообщение: ${(ctx.message as any)?.text ?? (ctx.callbackQuery as any)?.data ?? ''}`,
+    );
+    if (ctx.from) ctx.user = extractUser(ctx);
     ctx.di = app.di.cradle;
     await next();
   });
 
-  bot.on('message', (ctx) => dispatch(ctx as any));
-  bot.on('callback_query', (ctx) => dispatch(ctx as any));
+  bot.on('message', async (ctx, next) => {
+    await dispatch(ctx as any);
+    return next();
+  });
+
+  bot.on('callback_query', async (ctx, next) => {
+    await dispatch(ctx as any);
+    return next();
+  });
 
   async function dispatch(ctx: Ctx) {
     const tgId = ctx.user.telegramId;
@@ -43,6 +51,7 @@ export function buildBot(token: string, app: FastifyInstance) {
 
       states.set(tgId, cmd);
 
+      loggers.telegram.info({ userId: ctx.from?.id }, `Вызвана команда: ${cmdId}`);
       await cmd.execute(ctx);
 
       if (cmd.isFinished) states.clear(tgId);
@@ -59,7 +68,12 @@ export function buildBot(token: string, app: FastifyInstance) {
 
   bot.catch(async (err, ctx) => {
     try {
-      await ctx.reply(getErrorMessage(err));
+      if (err instanceof AppError) {
+        loggers.telegram.error({ type: err.name }, `Получена ошибка: ${err.message}`);
+        await ctx.reply(getErrorMessage(err));
+      } else {
+        loggers.telegram.error({ err }, 'Необработанная ошибка в Telegraf');
+      }
     } catch {
       //ignore
     } finally {
