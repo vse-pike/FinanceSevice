@@ -56,10 +56,11 @@ export class SelectSnapshotsPage implements Page<SnapshotCommandCtx> {
       return { done: true };
     }
 
-    const { items, totals } = FinanceCalculator.calculateSnapshotsDeltaUSD(shots);
+    const { items, totals, snapshotsCount } = FinanceCalculator.calculateSnapshotsDeltaUSD(shots);
 
     ctx.context.items = items;
     ctx.context.totals = totals;
+    ctx.context.snapshotsCount = snapshotsCount;
 
     return { done: false, page: new ShowSnapshotsPage() };
   }
@@ -86,6 +87,13 @@ export class ShowSnapshotsPage implements Page<SnapshotCommandCtx> {
     });
 
     nodes.push({ type: 'Divider' });
+
+    nodes.push({
+      type: 'Row',
+      label: 'Кол-во снапшотов по каждому активу',
+      value: ctx.context.snapshotsCount,
+      boldLabel: true,
+    });
 
     for (const it of ctx.context.items) {
       nodes.push({

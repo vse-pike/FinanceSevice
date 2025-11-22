@@ -13,6 +13,7 @@ export type MinimalSnapshot = {
 export type SnapshotDeltaResult = {
   items: SnapshotItemUSD[];
   totals: { usd: { endNet: Prisma.Decimal } };
+  snapshotsCount: number;
 };
 
 export type SnapshotItemUSD = {

@@ -33,6 +33,7 @@ export type SnapshotCtxState = {
 
   items?: SnapshotItem[];
   totals?: SnapshotTotals;
+  snapshotsCount?: number;
 };
 
 export interface SnapshotCommandCtx {

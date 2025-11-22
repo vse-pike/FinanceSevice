@@ -14,8 +14,17 @@ export class FinanceCalculator {
    */
   static calculateSnapshotsDeltaUSD(shots: MinimalSnapshot[]): SnapshotDeltaResult {
     if (!shots.length) {
-      return { items: [], totals: { usd: { endNet: new Prisma.Decimal(0) } } };
+      return { items: [], totals: { usd: { endNet: new Prisma.Decimal(0) } }, snapshotsCount: 0 };
     }
+
+    const counts: Record<string, number> = {};
+
+    for (const shot of shots) {
+      const key = String(shot.assetId);
+      counts[key] = (counts[key] || 0) + 1;
+    }
+
+    const maxCount = Math.max(...Object.values(counts));
 
     const startByAsset = new Map<string, MinimalSnapshot>();
     const endByAsset = new Map<string, MinimalSnapshot>();
@@ -87,6 +96,6 @@ export class FinanceCalculator {
       });
     }
 
-    return { items, totals: { usd: { endNet: totalEndNetUsd } } };
+    return { items, totals: { usd: { endNet: totalEndNetUsd } }, snapshotsCount: maxCount };
   }
 }

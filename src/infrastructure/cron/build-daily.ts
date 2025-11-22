@@ -1,4 +1,4 @@
-import { Prisma, ValuationMode } from '@prisma/client';
+import { Asset, Prisma, ValuationMode } from '@prisma/client';
 import { db } from '../db/db.js';
 import { FastifyInstance } from 'fastify';
 import { loggers } from '@/logger.js';
@@ -8,10 +8,12 @@ export async function buildDailySnapshots(app: FastifyInstance) {
 
   const started = Date.now();
 
-  const assets = await db.asset.findMany({});
+  const assets: Asset[] = await db.asset.findMany({});
 
   let success = 0;
   let failed = 0;
+
+  const updatedAssets = [];
 
   for (const a of assets) {
     try {
@@ -29,30 +31,40 @@ export async function buildDailySnapshots(app: FastifyInstance) {
         source: { at: new Date().toISOString() },
       };
 
-      await db.dailySnapshot.create({
-        data: {
-          assetId: a.id,
-          userId: a.userId,
-          name: a.name,
-          type: a.type,
-          currency: a.currency,
-          qty: a.qty,
-          valuationMode: a.valuationMode,
-          total: a.total,
-          debt: a.debt,
-          valuesJson: valuesJson,
-          metaJson: metaJson,
-        },
+      updatedAssets.push({
+        assetId: a.id,
+        userId: a.userId,
+        name: a.name,
+        type: a.type,
+        currency: a.currency,
+        qty: a.qty,
+        valuationMode: a.valuationMode,
+        total: a.total,
+        debt: a.debt,
+        valuesJson: valuesJson,
+        metaJson: metaJson,
       });
+
       success++;
-      loggers.cron.info({ id: a.id, name: a.name }, 'Снапшот создан');
+      loggers.cron.info({ id: a.id, name: a.name }, 'Снапшот подготовлен');
     } catch (err) {
       failed++;
-      loggers.cron.error({ id: a.id, name: a.name, err }, 'Снапшот не создан');
+      loggers.cron.error({ id: a.id, name: a.name, err }, 'Снапшот не подготовлен');
     }
   }
+
   const ms = Date.now() - started;
-  loggers.cron.info(`Джоба снапшотов завершена: ✅ ${success} / ❌ ${failed} (${ms}ms)`);
+  loggers.cron.info(`Снапшоты подготовлены к сохранению: ✅ ${success} / ❌ ${failed} (${ms}ms)`);
+
+  try {
+    await db.dailySnapshot.createMany({
+      data: updatedAssets,
+    });
+    loggers.cron.info(`Снапшоты были сохранены`);
+  } catch (err) {
+    failed++;
+    loggers.cron.error('Снапшот не были сохранены');
+  }
 }
 
 async function computeOne(
