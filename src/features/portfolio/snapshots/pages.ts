@@ -72,6 +72,12 @@ export class ShowSnapshotsPage implements Page<SnapshotCommandCtx> {
 
     const period = ctx.context.period!;
     nodes.push({ type: 'Paragraph', text: `Период: ${labelPeriod(period)}` });
+    nodes.push({
+      type: 'Row',
+      label: 'Кол-во снапшотов по каждому активу',
+      value: ctx.context.snapshotsCount,
+      boldLabel: true,
+    });
     nodes.push({ type: 'Divider' });
 
     if (!ctx.context.items?.length) {
@@ -87,13 +93,6 @@ export class ShowSnapshotsPage implements Page<SnapshotCommandCtx> {
     });
 
     nodes.push({ type: 'Divider' });
-
-    nodes.push({
-      type: 'Row',
-      label: 'Кол-во снапшотов по каждому активу',
-      value: ctx.context.snapshotsCount,
-      boldLabel: true,
-    });
 
     for (const it of ctx.context.items) {
       nodes.push({
